@@ -28,13 +28,13 @@ contract Main is Ownable, ERC721A, MerkleWhitelist {
     uint256 public DA_DECREMENT_FREQUENCY = 180;
 
     //Starting DA time (seconds).
-    uint256 public DA_STARTING_TIMESTAMP = 1648080000;
+    uint256 public DA_STARTING_TIMESTAMP = 1653296400;
 
     //The final auction price.
     uint256 public DA_FINAL_PRICE;
 
-    //The quantity for DA.
-    uint256 public DA_QUANTITY = 7000;
+    // The total supply count
+    uint256 public DA_QUANTITY = 11000;
 
     //How many publicWL have been minted
     uint16 public PUBLIC_WL_MINTED;
@@ -62,16 +62,17 @@ contract Main is Ownable, ERC721A, MerkleWhitelist {
     //Token to token price data
     mapping(address => TokenBatchPriceData[]) public userToTokenBatchPriceData;
 
-    mapping(address => bool) public userToHasMintedPublicWL;
-    mapping(address => bool) public userToHasMintedMiceWL;
+    mapping (address => bool) private isOwnerOfOG;
+    mapping (address => bool) private isOwnerOfWL;
+    mapping (address => uint256) private amountOfPublic;
 
     bool public REVEALED;
     string public UNREVEALED_URI =
         "ipfs://QmWQMuChCoTc2jKoDqCVHBxYe6pp1E2KMyW4HG8U7AA6wF";
     string public BASE_URI;
 
-    uint256 public publicWLStartTime = 1648166400;
-    uint256 public miceWLStartTime = 1648598400;
+    uint256 public WLStartTime = 1653318000;
+    uint256 public OGStartTime = 1653404400;
 
     constructor() ERC721A("NFT-James", "NFT-JAMES") {}
 
@@ -101,15 +102,14 @@ contract Main is Ownable, ERC721A, MerkleWhitelist {
         return DA_STARTING_PRICE - totalDecrement;
     }
 
-    function mintDutchAuction(uint8 quantity) public payable {
+    function mintPublic(uint8 quantity) public payable {
         //Require DA started
         require(
             block.timestamp >= DA_STARTING_TIMESTAMP,
             "DA has not started!"
         );
-
-        //Require max 5
-        require(quantity > 0 && quantity < 6, "Can only mint max 5 NFTs!");
+        require(amountOfPublic[msg.sender] + quantity <= 2, "Max 2 elements");
+        // require(publicMintedCount + quantity <= publicMinted, "Max suppy for DA reached!");
 
         uint256 _currentPrice = currentPrice();
 
@@ -118,10 +118,10 @@ contract Main is Ownable, ERC721A, MerkleWhitelist {
             msg.value >= quantity * _currentPrice,
             "Did not send enough eth."
         );
-
+        
         //Max supply
         require(
-            totalSupply() + quantity <= DA_QUANTITY,
+            totalSupply() + quantity <= 2900,
             "Max supply for DA reached!"
         );
 
@@ -135,22 +135,23 @@ contract Main is Ownable, ERC721A, MerkleWhitelist {
 
         //Mint the quantity
         _safeMint(msg.sender, quantity);
+        // publicMintedCount = publicMintedCount + quantity;
+        amountOfPublic[msg.sender] = amountOfPublic[msg.sender] + quantity;
     }
 
-    function mintPublicWL(bytes32[] memory proof)
+    function mintOG(bytes32[] memory proof)
         public
         payable
-        onlyPublicWhitelist(proof)
+        onlyOG(proof)
     {
+        require(totalSupply() + 1 <= 2000, "Max supply of 2,000!");
+        // require( OGMintedCount <= OGMinted, "Max supply of 2000!");
+        require(!isOwnerOfOG[msg.sender], "Already minted");
         require(DA_FINAL_PRICE > 0, "Dutch action must be over!");
 
         require(
-            !userToHasMintedPublicWL[msg.sender],
-            "Can only mint once during public WL!"
-        );
-        require(
-            block.timestamp >= publicWLStartTime,
-            "Public WL has not started yet!"
+            block.timestamp >= OGStartTime,
+            "Public OG has not started yet!"
         );
 
         require(
@@ -159,44 +160,45 @@ contract Main is Ownable, ERC721A, MerkleWhitelist {
         );
 
         //Require max supply just in case.
-        require(totalSupply() + 1 <= 8500, "Max supply of 8,500!");
 
-        userToHasMintedPublicWL[msg.sender] = true;
-        PUBLIC_WL_MINTED++;
-
+        isOwnerOfOG[msg.sender] = true;
+        // OGMintedCount++;
         //Mint them
         _safeMint(msg.sender, 1);
     }
 
-    function mintMouseWL(bytes32[] memory proof)
+    function mintWL(bytes32[] memory proof)
         public
-        onlyMouseWhitelist(proof)
+        onlyWL(proof)
     {
+        // require(WLMintedCount + 1 >= WLMinted, "Max supply of 6000!");
+        require(totalSupply() + 1 <= 6000, "Max supply of 6,000!");
+
         require(DA_FINAL_PRICE > 0, "Dutch action must be over!");
         require(
-            !userToHasMintedMiceWL[msg.sender],
+            !isOwnerOfWL[msg.sender],
             "Can only mint once during mouse WL!"
         );
         require(
-            block.timestamp >= miceWLStartTime,
+            block.timestamp >= OGStartTime,
             "Mice WL has not started yet!"
         );
 
-        //Require max supply just in case.
-        require(totalSupply() + 1 <= 10000, "Max supply of 10,000!");
-
-        userToHasMintedMiceWL[msg.sender] = true;
+        isOwnerOfWL[msg.sender] = true;
 
         //Mint them
         _safeMint(msg.sender, 1);
+        // WLMintedCount++;
     }
 
     function teamMint(uint256 quantity, address receiver) public onlyOwner {
         //Max supply
         require(
-            totalSupply() + quantity <= 10000,
-            "Max supply of 10,000 total!"
+            totalSupply() + quantity <= 100,
+            "Max supply of 100 total!"
         );
+        // teamMintedCount = teamMintedCount + quantity;
+        // require(teamMintedCount >= 100, "Max supply of 100!");
 
         require(DA_FINAL_PRICE > 0, "Dutch action must be over!");
 

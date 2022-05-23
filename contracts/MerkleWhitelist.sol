@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MerkleWhitelist is Ownable {
-  bytes32 public publicWhitelistMerkleRoot;
-  bytes32 public mouseWhitelistMerkleRoot;
+  bytes32 public wlMerkleRoot;
+  bytes32 public ogMerkleRoot;
 
   string public whitelistURI;
 
@@ -15,21 +15,21 @@ contract MerkleWhitelist is Ownable {
   */
 
   //Frontend verify functions
-  function verifyPublicSender(address userAddress, bytes32[] memory proof) public view returns (bool) {
-    return _verify(proof, _hash(userAddress), publicWhitelistMerkleRoot);
+  function verifyWLSender(address userAddress, bytes32[] memory proof) public view returns (bool) {
+    return _verify(proof, _hash(userAddress), wlMerkleRoot);
   }
 
-  function verifyMouseSender(address userAddress, bytes32[] memory proof) public view returns (bool) {
-    return _verify(proof, _hash(userAddress), mouseWhitelistMerkleRoot);
+  function verifyOGSender(address userAddress, bytes32[] memory proof) public view returns (bool) {
+    return _verify(proof, _hash(userAddress), ogMerkleRoot);
   }
 
   //Internal verify functions
-  function _verifyPublicSender(bytes32[] memory proof) internal view returns (bool) {
-    return _verify(proof, _hash(msg.sender), publicWhitelistMerkleRoot);
+  function _verifyWLSender(bytes32[] memory proof) internal view returns (bool) {
+    return _verify(proof, _hash(msg.sender), wlMerkleRoot);
   }
 
-  function _verifyMouseSender(bytes32[] memory proof) internal view returns (bool) {
-    return _verify(proof, _hash(msg.sender), mouseWhitelistMerkleRoot);
+  function _verifyOGSender(bytes32[] memory proof) internal view returns (bool) {
+    return _verify(proof, _hash(msg.sender), ogMerkleRoot);
   }
 
   function _verify(bytes32[] memory proof, bytes32 addressHash, bytes32 whitelistMerkleRoot)
@@ -48,24 +48,24 @@ contract MerkleWhitelist is Ownable {
   OWNER FUNCTIONS
   */
 
-  function setPublicWhitelistMerkleRoot(bytes32 merkleRoot) external onlyOwner {
-    publicWhitelistMerkleRoot = merkleRoot;
+  function setWLMerkleRoot(bytes32 merkleRoot) external onlyOwner {
+    wlMerkleRoot = merkleRoot;
   }
 
-  function setMouseWhitelistMerkleRoot(bytes32 merkleRoot) external onlyOwner {
-    mouseWhitelistMerkleRoot = merkleRoot;
+  function setOGMerkleRoot(bytes32 merkleRoot) external onlyOwner {
+    ogMerkleRoot = merkleRoot;
   }
 
   /*
   MODIFIER
   */
-  modifier onlyMouseWhitelist(bytes32[] memory proof) {
-    require(_verifyMouseSender(proof), "MerkleWhitelist: Caller is not whitelisted");
+  modifier onlyOG(bytes32[] memory proof) {
+    require(_verifyOGSender(proof), "MerkleWhitelist: Caller is not whitelisted");
     _;
   }
   
-  modifier onlyPublicWhitelist(bytes32[] memory proof) {
-    require(_verifyPublicSender(proof), "MerkleWhitelist: Caller is not whitelisted");
+  modifier onlyWL(bytes32[] memory proof) {
+    require(_verifyWLSender(proof), "MerkleWhitelist: Caller is not whitelisted");
     _;
   }
 }
